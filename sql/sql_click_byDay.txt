@@ -1,0 +1,6 @@
+SELECT
+                search_id,
+                product_id_view
+FROM
+                taskforce_sv_product_viewed
+where dt='%s'

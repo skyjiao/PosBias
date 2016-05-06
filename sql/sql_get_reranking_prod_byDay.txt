@@ -1,0 +1,7 @@
+select
+    search_id,
+    sku,
+    rang
+from
+    taskforce_reranking_archi_cible_production_a
+where dt='%s'

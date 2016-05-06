@@ -1,0 +1,185 @@
+SELECT
+	rerank_prices.search_id as search_id,
+    sku,
+    ca,
+    rank,
+    price
+
+FROM
+	(
+
+	SELECT
+		search_id,
+		reranking.sku,
+		ca,
+		rank,
+		price
+
+	FROM (
+
+		SELECT
+			search_id,
+			sku,
+			ca,
+			ROW_NUMBER() OVER (PARTITION BY search_id ORDER BY score_buy DESC, score_click DESC) as rank
+
+		FROM
+		(
+			SELECT
+				  product_add_buy_trend.search_id,
+				  sku,
+				  ca,
+				  score_click,
+				  score_buy
+
+			FROM
+			(
+
+				SELECT
+					  search_id,
+					  sku,
+					  SUM(ca) as ca,
+					  SUM((nb_product_viewed + nb_product_added)*(1/(trending_days * trending_days))) as score_click,
+					  SUM(nb_product_bought*(1/(trending_days * trending_days))) as score_buy
+				FROM
+					(
+					SELECT
+						hg.search_id,
+						hg.product_id as sku,
+						trending.trending_days,
+						SUM(hg.nb_product_viewed) as nb_product_viewed,
+						SUM(hg.nb_product_added) as nb_product_added,
+						SUM(hg.nb_product_bought) as nb_product_bought,
+						SUM(hg.ca) as ca
+					FROM
+						taskforce_hg_historic hg
+						JOIN(
+							 SELECT
+								   distinct dt,
+								   ROW_NUMBER() OVER (ORDER BY dt DESC ) trending_days
+							 FROM
+								   taskforce_hg_historic
+							 WHERE
+								   dt >= '+YYYY-MM-DDstart+'
+							 AND
+								   dt <= '+YYYY-MM-DDend+'
+							 AND
+								   product_id IS NOT NULL
+							 AND
+								   cookieReranking = '+COOKIE+'
+						)trending
+						ON (
+							 trending.dt = hg.dt
+						)
+					WHERE
+						hg.dt >= '+YYYY-MM-DDstart+'
+					AND
+						hg.dt <= '+YYYY-MM-DDend+'
+					AND
+						hg.product_id is not null
+					AND
+						hg.cookieReranking = '+COOKIE+'
+					GROUP BY
+						hg.search_id,
+						hg.product_id,
+						trending.trending_days
+
+					)tmp
+				GROUP BY
+				  search_id,
+				  sku
+
+
+			) product_add_buy_trend
+
+			LEFT JOIN (
+
+
+
+				SELECT
+					   hg_category.search_id,
+					   hg_category.product_id
+				 FROM
+					   taskforce_hg_historic hg_category
+
+				LEFT JOIN(
+					SELECT
+						product_id,
+						category_product_id_level1
+					FROM
+						dwh_prod.product_reference
+				)product_reference
+				ON (
+					lower(product_reference.product_id)=lower(hg_category.product_id)
+				)
+
+				 WHERE
+					   hg_category.dt >= '+YYYY-MM-DDstart+'
+				 AND
+					   hg_category.dt <= '+YYYY-MM-DDend+'
+				 AND
+					   hg_category.nb_product_viewed + hg_category.nb_product_added > 0
+				 AND
+					   hg_category.nb_product_bought = 0
+				 AND
+					   product_reference.category_product_id_level1 = '+catX+'
+
+
+
+			)cat_x
+
+			ON (
+				lower(cat_x.product_id) = lower(product_add_buy_trend.sku)
+				AND
+				cat_x.search_id = product_add_buy_trend.search_id
+			)
+
+			WHERE
+				cat_x.product_id IS NULL
+
+		)score
+
+	) reranking
+
+
+	LEFT JOIN (
+
+		SELECT
+			sku,
+			price
+		FROM
+			taskforce_exalead_products_price
+
+	) price
+
+
+	ON lower(reranking.sku) = lower(price.sku)
+
+	WHERE rank <= +nb_product+
+
+	)rerank_prices
+
+JOIN
+	(
+	SELECT
+		search_id,
+		COUNT(search_id) as nb_occurence_search_id
+	FROM taskforce_sv_search
+	WHERE
+		dt >= '+YYYY-MM-DDstartReq+'
+	AND
+		dt <= '+YYYY-MM-DDendReq+'
+	AND
+		search_id!=''
+	GROUP BY
+		search_id
+	ORDER BY
+		nb_occurence_search_id DESC
+	LIMIT
+		+nb_requete_limit+
+
+	)searchID
+
+ON searchID.search_id=rerank_prices.search_id
+
+ORDER BY search_id, price

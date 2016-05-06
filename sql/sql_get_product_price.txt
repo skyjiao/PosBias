@@ -1,0 +1,2 @@
+select sku, price
+from taskforce_exalead_products_price

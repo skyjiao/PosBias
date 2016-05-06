@@ -1,0 +1,5 @@
+select search_id, count(search_id) as nb
+from taskforce_sv_search
+where search_id <> '' and dt >= "2015-10-09" and dt <= "2015-11-26"
+group by search_id
+order by nb desc

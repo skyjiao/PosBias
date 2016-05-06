@@ -1,0 +1,6 @@
+SELECT
+                search_id,
+                product_id_buy
+FROM
+                taskforce_sv_product_bayed_search
+where dt='%s'
