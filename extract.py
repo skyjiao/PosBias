@@ -39,7 +39,7 @@ def extract_session_byDay(dt):
     with open("sql/sql_get_session_byDay.txt", "r") as f:
             myreq = f.read()
 
-    df = extract_utils.extract_from_omniture(myreq%dt)
+    df = extract_utils.extract_from_omniture_with_retry(myreq%dt, 10)
     print("end session %s"%dt)
     print("cleaning dataframe")
     cleaned_df = retrieve_simple_samples(df)
@@ -51,13 +51,13 @@ def extract_purchase_byDay(dt):
     with open("sql/sql_purchase_byDay.txt", "r") as f:
             myreq = f.read()
 
-    df = extract_utils.extract_from_omniture(myreq%dt)
+    df = extract_utils.extract_from_omniture_with_retry(myreq%dt, 10)
     print("end purchase %s"%dt)
 
     df.to_csv("data/purchase/%s.csv"%out_filename, sep = ";", index = False, header = True)
 
 def main_go():
-    date_list = time_utils.make_datelist("2016-01-01", 100)
+    date_list = time_utils.make_datelist("2015-01-01", 365)
     for dt in date_list:
         extract_session_byDay(dt)
         extract_purchase_byDay(dt)

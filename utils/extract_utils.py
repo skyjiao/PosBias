@@ -61,7 +61,7 @@ def extract_from_omniture_with_retry(req, nb = 10):
             return df
         else:
             print("attemps %d fails, will be relaunched after 30 secs"%i)
-            time.sleep(30)
+            time.sleep(60)
 
     print("extraction failed after %d attemps"%nb)
 

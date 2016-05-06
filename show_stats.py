@@ -50,4 +50,4 @@ def main_create_stat_file(begin, nb):
     out_df.to_csv("data/position_stat_%s.csv"%out_suffix, index=False, header=True, sep=";")
 
 if __name__ == "__main__":
-    main_create_stat_file(begin = "2016-01-01", nb = 30)
+    main_create_stat_file(begin = "2015-01-01", nb = 365)
