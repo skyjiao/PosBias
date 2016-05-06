@@ -1,0 +1,3 @@
+select sessionid as my_id,search_id, prop60
+from taskforce_sv_search
+where dt='%s' and not isnull(prop60) and (not prop60="")
