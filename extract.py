@@ -57,7 +57,7 @@ def extract_purchase_byDay(dt):
     df.to_csv("data/purchase/%s.csv"%out_filename, sep = ";", index = False, header = True)
 
 def main_go():
-    date_list = time_utils.make_datelist("2016-04-01", 30)
+    date_list = time_utils.make_datelist("2016-01-01", 100)
     for dt in date_list:
         extract_session_byDay(dt)
         extract_purchase_byDay(dt)
